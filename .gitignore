@@ -1,5 +1,5 @@
-node_modules
-
+node_modules/
+.next/
 # Игнорировать все файлы в public/uploads, кроме .gitkeep
 public/uploads/*
 !public/uploads/.gitkeep
