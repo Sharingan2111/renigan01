@@ -1,1 +1,9 @@
 node_modules
+
+# Игнорировать все файлы в public/uploads, кроме .gitkeep
+public/uploads/*
+!public/uploads/.gitkeep
+public/uploads/images/*
+!public/uploads/images/.gitkeep
+public/uploads/docs/*
+!public/uploads/docs/.gitkeep
