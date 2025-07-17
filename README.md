@@ -136,3 +136,4 @@ MIT License - см. файл LICENSE
 ---
 
 **Создано для конкурса Telegram Mini Apps 2025** 🚀 # sharingan
+# sharingan
