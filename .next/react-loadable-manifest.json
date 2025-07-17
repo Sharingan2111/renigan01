@@ -1,0 +1,14 @@
+{
+  "components/TonWalletComponent.js -> @tonconnect/sdk": {
+    "id": "components/TonWalletComponent.js -> @tonconnect/sdk",
+    "files": [
+      "static/chunks/_app-pages-browser_node_modules_tonconnect_sdk_lib_esm_index_mjs.js"
+    ]
+  },
+  "components/TonWalletNoSSR.js -> ./TonWalletComponent": {
+    "id": "components/TonWalletNoSSR.js -> ./TonWalletComponent",
+    "files": [
+      "static/chunks/_app-pages-browser_src_components_TonWalletComponent_js.js"
+    ]
+  }
+}

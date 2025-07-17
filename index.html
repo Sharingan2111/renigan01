@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TON Wallet Mini App</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--tg-theme-bg-color, #fff);
+      color: var(--tg-theme-text-color, #111);
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+    }
+    .container {
+      max-width: 420px;
+      margin: 0 auto;
+      padding: 16px;
+    }
+    .header {
+      text-align: center;
+      margin-bottom: 18px;
+    }
+    .wallet-box {
+      background: var(--tg-theme-secondary-bg-color, #f8f9fa);
+      border-radius: 12px;
+      padding: 18px;
+      margin-bottom: 18px;
+      border: 1px solid var(--tg-theme-hint-color, #e0e0e0);
+    }
+    .address {
+      font-family: monospace;
+      font-size: 13px;
+      word-break: break-all;
+      background: var(--tg-theme-bg-color, #fff);
+      padding: 6px 8px;
+      border-radius: 4px;
+      margin-top: 4px;
+      margin-bottom: 8px;
+    }
+    .balance {
+      font-size: 18px;
+      font-weight: bold;
+      color: var(--tg-theme-text-color, #111);
+      margin-bottom: 8px;
+    }
+    .btn {
+      width: 100%;
+      padding: 12px;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 500;
+      cursor: pointer;
+      margin-bottom: 10px;
+      background: var(--tg-theme-button-color, #007AFF);
+      color: var(--tg-theme-button-text-color, #fff);
+      transition: opacity 0.2s;
+    }
+    .btn:active { opacity: 0.8; }
+    .status {
+      padding: 10px;
+      border-radius: 6px;
+      margin-bottom: 15px;
+      font-size: 14px;
+      display: none;
+    }
+    .status.active { display: block; }
+    .status.success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+    .status.error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+    .status.info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+    .tx-form { margin-top: 18px; }
+    .tx-form input { width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #e0e0e0; margin-bottom: 10px; font-size: 16px; }
+    .tx-form input:focus { outline: none; border-color: #007AFF; }
+    .tx-form label { font-size: 14px; font-weight: 500; margin-bottom: 3px; display: block; }
+    .tx-form .btn { margin-bottom: 0; }
+    @media (max-width: 480px) {
+      .container { padding: 4px; }
+      .wallet-box { padding: 10px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1 style="font-size: 1.3em; margin-bottom: 0.2em;">TON Wallet Mini App</h1>
+      <div style="font-size: 1em; color: #888;">Telegram Wallet & Tonkeeper</div>
+    </div>
+    <div id="status" class="status"></div>
+    <div class="wallet-box">
+      <div id="tonconnect-ui"></div>
+      <div id="walletInfo" style="display:none;">
+        <div class="balance">Баланс: <span id="balance">0</span> TON</div>
+        <div class="address" id="address"></div>
+      </div>
+    </div>
+    <div class="wallet-box" id="txSection" style="display:none;">
+      <form class="tx-form" id="txForm">
+        <label for="to">Адрес получателя</label>
+        <input type="text" id="to" placeholder="UQ..." required />
+        <label for="amount">Сумма (TON)</label>
+        <input type="number" id="amount" placeholder="0.1" min="0.01" step="0.01" required />
+        <label for="comment">Комментарий (опционально)</label>
+        <input type="text" id="comment" placeholder="Комментарий" />
+        <button type="submit" class="btn">Отправить TON</button>
+      </form>
+    </div>
+  </div>
+  <script>
+    // Telegram WebApp init
+    if(window.Telegram && window.Telegram.WebApp) {
+      Telegram.WebApp.ready();
+      Telegram.WebApp.expand();
+    }
+    // TON Connect UI init
+    const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
+      manifestUrl: window.location.origin + '/tonconnect-manifest.json',
+      buttonRootId: 'tonconnect-ui',
+      uiPreferences: {
+        language: 'ru',
+        borderRadius: 'l',
+        colorsSet: 'ton',
+      }
+    });
+    // State
+    let wallet = null;
+    let balance = 0;
+    // Helpers
+    function showStatus(msg, type = 'info') {
+      const el = document.getElementById('status');
+      el.textContent = msg;
+      el.className = 'status active ' + type;
+      setTimeout(() => { el.className = 'status'; }, 4000);
+    }
+    function formatTON(nano) {
+      return (parseInt(nano) / 1e9).toFixed(3);
+    }
+    // Wallet connect event
+    tonConnectUI.onStatusChange(async walletInfo => {
+      if(walletInfo && walletInfo.account) {
+        wallet = walletInfo;
+        document.getElementById('walletInfo').style.display = '';
+        document.getElementById('address').textContent = wallet.account.address;
+        showStatus('Кошелек подключен!', 'success');
+        // Получаем баланс через Toncenter API (или другой RPC)
+        try {
+          const resp = await fetch(`https://tonapi.io/v2/accounts/${wallet.account.address}`);
+          const data = await resp.json();
+          balance = data.balance || 0;
+          document.getElementById('balance').textContent = formatTON(balance);
+        } catch(e) {
+          document.getElementById('balance').textContent = '?';
+        }
+        document.getElementById('txSection').style.display = '';
+      } else {
+        wallet = null;
+        document.getElementById('walletInfo').style.display = 'none';
+        document.getElementById('txSection').style.display = 'none';
+      }
+    });
+    // Отправка TON
+    document.getElementById('txForm').addEventListener('submit', async e => {
+      e.preventDefault();
+      if(!wallet || !wallet.account) {
+        showStatus('Сначала подключите кошелек!', 'error');
+        return;
+      }
+      const to = document.getElementById('to').value.trim();
+      const amount = document.getElementById('amount').value.trim();
+      const comment = document.getElementById('comment').value.trim();
+      if(!to || !amount) {
+        showStatus('Заполните все поля!', 'error');
+        return;
+      }
+      try {
+        await tonConnectUI.sendTransaction({
+          validUntil: Math.floor(Date.now() / 1000) + 600,
+          messages: [{
+            address: to,
+            amount: (parseFloat(amount) * 1e9).toFixed(0),
+            payload: comment ? TON_CONNECT_UI.textToCell(comment) : undefined
+          }]
+        });
+        showStatus('Транзакция отправлена!', 'success');
+      } catch(err) {
+        showStatus('Ошибка: ' + (err.message || err), 'error');
+      }
+    });
+  </script>
+</body>
+</html> 

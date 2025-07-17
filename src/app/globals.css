@@ -1,0 +1,57 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: #374151;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #6b7280;
+  border-radius: 2px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
+
+/* Smooth transitions */
+* {
+  transition: all 0.2s ease-in-out;
+}
+
+/* Mobile optimizations */
+html, body {
+  height: 100%;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Telegram WebApp specific styles */
+.tg-viewport {
+  height: 100vh;
+  height: 100dvh;
+}
+
+@keyframes coinflip-spin {
+  0% {
+    transform: rotateY(0deg);
+  }
+  50% {
+    transform: rotateY(1800deg);
+  }
+  100% {
+    transform: rotateY(3600deg);
+  }
+}
+
+.coinflip-anim {
+  animation: coinflip-spin 1.2s cubic-bezier(0.4,1.6,0.4,1) forwards;
+  will-change: transform;
+  perspective: 800px;
+} 
